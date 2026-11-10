@@ -4,62 +4,156 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="تتبع اليد">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#020705">
 <title>نظام تتبع اليد</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-  :root { --g:#00ff41; --g2:#00b32d; --g3:#006b1b; --red:#ff3b3b; --bg:#000; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  html,body { background:var(--bg); color:var(--g); font-family:"SF Mono",Menlo,Consolas,monospace; height:100%; overflow:hidden; }
-  body { display:flex; flex-direction:column; padding:env(safe-area-inset-top) 8px env(safe-area-inset-bottom); }
-  #rain { position:fixed; inset:0; z-index:0; opacity:.35; }
-  .z { position:relative; z-index:1; }
-  #cam { position:relative; width:100%; aspect-ratio:3/4; max-height:52vh; margin-top:6px; border:1px solid var(--g3); overflow:hidden; background:#000; }
+  :root {
+    --bg:#020705; --panel:rgba(4,18,12,.78); --line:rgba(0,255,156,.18); --line2:rgba(0,255,156,.38);
+    --g:#00ff9c; --g2:#00c97a; --dim:#3f7a63; --txt:#c9ffe6; --red:#ff4d5e; --amber:#ffc23d;
+    --ar:"IBM Plex Sans Arabic",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; background:var(--bg); color:var(--txt); font-family:var(--ar); overflow:hidden; }
+  body {
+    display:flex; flex-direction:column; gap:10px; height:100dvh;
+    padding:calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 10px);
+  }
+  #rain { position:fixed; inset:0; z-index:0; opacity:.22; pointer-events:none; }
+  body > *:not(#rain) { position:relative; z-index:1; }
+  .mono { font-family:var(--mono); direction:ltr; unicode-bidi:isolate; }
+
+  /* الشريط العلوي */
+  header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:700; font-size:17px; color:var(--g); text-shadow:0 0 12px rgba(0,255,156,.45); }
+  .brand i { width:10px; height:10px; border-radius:2px; background:var(--g); box-shadow:0 0 10px var(--g); animation:pulse 2s infinite; }
+  .pills { display:flex; gap:6px; }
+  .pill { display:flex; align-items:center; gap:5px; font-size:11px; padding:4px 8px; border:1px solid var(--line); border-radius:99px; background:var(--panel); color:var(--dim); }
+  .pill b { width:7px; height:7px; border-radius:50%; background:var(--red); box-shadow:0 0 6px var(--red); }
+  .pill.wait b { background:var(--amber); box-shadow:0 0 6px var(--amber); animation:pulse 1s infinite; }
+  .pill.ok b { background:var(--g); box-shadow:0 0 6px var(--g); }
+  .pill.ok { color:var(--txt); }
+
+  /* الكاميرا */
+  #cam { flex:1; min-height:0; position:relative; border-radius:18px; overflow:hidden; background:#000; border:1px solid var(--line2);
+         box-shadow:0 0 0 1px rgba(0,0,0,.6) inset, 0 0 30px rgba(0,255,156,.08); }
   #cam video, #cam canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   #cam.mirror video, #cam.mirror canvas { transform:scaleX(-1); }
-  #cam::after { content:""; position:absolute; inset:0; pointer-events:none;
-    background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px); }
-  #lock { position:absolute; right:8px; top:6px; font-size:12px; z-index:2; text-shadow:0 0 4px var(--g); }
-  .box { border:1px solid var(--g3); background:rgba(0,0,0,.72); padding:6px 8px; margin-top:6px; font-size:11.5px; line-height:1.55; }
-  .row { display:flex; justify-content:space-between; gap:8px; white-space:nowrap; }
-  .ok { color:var(--g); } .bad { color:var(--red); } .dim { color:var(--g3); } .hi { color:#b8ffc8; }
-  .bar { display:grid; grid-template-columns:52px 58px 1fr 38px; align-items:center; gap:6px; }
-  .bar i { display:block; height:9px; border:1px solid var(--g3); }
-  .bar i.on { background:var(--g); box-shadow:0 0 6px var(--g); border-color:var(--g); }
-  #log { flex:1; min-height:60px; overflow:hidden; font-size:10.5px; line-height:1.45; display:flex; flex-direction:column; justify-content:flex-end; }
-  #log div { unicode-bidi:plaintext; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .btns { display:flex; gap:6px; margin-top:6px; }
-  button { flex:1; background:#000; color:var(--g); border:1px solid var(--g); font:inherit; font-size:13px; padding:10px 4px; letter-spacing:1px; }
-  button:active { background:var(--g); color:#000; }
-  #start { position:absolute; inset:0; margin:auto; width:70%; height:56px; flex:none; z-index:3; font-size:15px; box-shadow:0 0 12px var(--g); }
-  .cursor { animation:blink 1s steps(1) infinite; } @keyframes blink { 50% { opacity:0; } }
+  #cam .scan { position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.16) 0 1px, transparent 1px 3px); }
+  #cam .sweep { position:absolute; left:0; right:0; height:70px; top:-70px; pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(0,255,156,.10), transparent); animation:sweep 3.2s linear infinite; }
+  .corner { position:absolute; width:26px; height:26px; border:2px solid var(--g); opacity:.7; pointer-events:none; }
+  .c1 { top:10px; right:10px; border-left:0; border-bottom:0; border-radius:0 8px 0 0; }
+  .c2 { top:10px; left:10px; border-right:0; border-bottom:0; border-radius:8px 0 0 0; }
+  .c3 { bottom:10px; right:10px; border-left:0; border-top:0; border-radius:0 0 8px 0; }
+  .c4 { bottom:10px; left:10px; border-right:0; border-top:0; border-radius:0 0 0 8px; }
+  .hud-top { position:absolute; top:14px; right:44px; left:44px; display:flex; justify-content:space-between; align-items:center; pointer-events:none; }
+  #lock { font-size:12px; font-weight:600; color:var(--g); padding:3px 10px; border-radius:99px; background:rgba(0,0,0,.55); border:1px solid var(--line2); opacity:0; transition:opacity .2s; }
+  #lock.on { opacity:1; }
+  #fps { font-size:11px; color:var(--dim); background:rgba(0,0,0,.55); padding:3px 8px; border-radius:99px; }
+  .hud-bottom { position:absolute; bottom:14px; right:44px; left:44px; display:flex; justify-content:space-between; align-items:flex-end; pointer-events:none; }
+  #count { font-family:var(--mono); font-size:54px; font-weight:600; line-height:1; color:var(--g); text-shadow:0 0 18px rgba(0,255,156,.6); }
+  #count small { font-size:18px; color:var(--dim); }
+  #handline { font-size:12px; color:var(--txt); background:rgba(0,0,0,.55); padding:4px 10px; border-radius:99px; }
+
+  /* شاشة البداية */
+  #splash { position:absolute; inset:0; z-index:3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+            padding:24px; text-align:center; background:radial-gradient(circle at 50% 40%, rgba(0,255,156,.10), rgba(2,7,5,.96) 70%); }
+  #splash h1 { font-size:24px; font-weight:700; color:var(--g); text-shadow:0 0 16px rgba(0,255,156,.5); }
+  #splash p { font-size:14px; color:var(--dim); line-height:1.8; }
+  #splash ol { list-style:none; display:grid; gap:8px; font-size:14px; text-align:right; }
+  #splash li { display:flex; gap:10px; align-items:center; }
+  #splash li span { flex:none; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-family:var(--mono); font-size:12px;
+                    border:1px solid var(--line2); color:var(--g); }
+  #start { font:600 17px var(--ar); color:#00140c; background:var(--g); border:0; border-radius:14px; padding:14px 34px;
+           box-shadow:0 0 28px rgba(0,255,156,.45); }
+  #start:active { transform:scale(.97); }
+  #start:disabled { opacity:.7; }
+  #err { font-size:13px; color:var(--red); min-height:1em; }
+
+  /* اللمبات */
+  #leds { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; padding:12px 8px 10px; border-radius:16px; background:var(--panel); border:1px solid var(--line); }
+  .led { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .led .bulb { width:34px; height:34px; border-radius:50% 50% 45% 45%; border:2px solid var(--c); opacity:.28; transition:all .12s;
+               background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.35), transparent 45%), color-mix(in srgb, var(--c) 25%, transparent); }
+  .led.on .bulb { opacity:1; background:radial-gradient(circle at 35% 30%, #fff, var(--c) 55%);
+                  box-shadow:0 0 14px var(--c), 0 0 30px color-mix(in srgb, var(--c) 60%, transparent); }
+  .led .name { font-size:12px; font-weight:500; }
+  .led .pin { font-size:10px; color:var(--dim); }
+
+  /* السجل */
+  #term { border-radius:14px; background:rgba(0,0,0,.72); border:1px solid var(--line); overflow:hidden; }
+  #term .bar { display:flex; justify-content:space-between; align-items:center; padding:6px 10px; font-size:11px; color:var(--dim); border-bottom:1px solid var(--line); }
+  #term .bar span:first-child::before { content:"▍"; color:var(--g); animation:blink 1s steps(1) infinite; margin-left:4px; }
+  #log { height:62px; overflow:hidden; padding:6px 10px; font-family:var(--mono); font-size:10.5px; line-height:1.55;
+         display:flex; flex-direction:column; justify-content:flex-end; transition:height .2s; }
+  #term.big #log { height:180px; }
+  #log div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; unicode-bidi:plaintext; text-align:right; color:var(--g2); }
+  #log .hi { color:var(--txt); } #log .bad { color:var(--red); } #log .dim { color:var(--dim); }
+
+  /* الأزرار */
+  nav { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  nav button { font:500 13px var(--ar); color:var(--txt); background:var(--panel); border:1px solid var(--line2); border-radius:12px; padding:11px 4px;
+               display:flex; align-items:center; justify-content:center; gap:6px; }
+  nav button:active { background:var(--g); color:#00140c; }
+  nav svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  @keyframes pulse { 50% { opacity:.35; } }
+  @keyframes blink { 50% { opacity:0; } }
+  @keyframes sweep { to { top:100%; } }
+  @media (max-height:700px) { #count { font-size:40px; } .led .bulb { width:28px; height:28px; } #log { height:44px; } }
 </style>
 </head>
 <body>
 <canvas id="rain"></canvas>
 
-<div class="box z">
-  <div class="hi">&gt; تشغيل نظام تتبع اليد — وضع لاسلكي_</div>
-  <div class="row"><span>الاتصال بالـ ESP32</span><span id="link" class="bad">[ انتظار ]</span></div>
-  <div class="row"><span>نموذج الذكاء الاصطناعي</span><span id="model" class="bad">[ انتظار ]</span></div>
-  <div class="row"><span id="handline">اليد: بانتظار التشغيل</span><span id="fps" class="dim">-- إطار/ث</span></div>
-</div>
+<header>
+  <div class="brand"><i></i>نظام تتبع اليد</div>
+  <div class="pills">
+    <div class="pill wait" id="p-link"><b></b>الخادم</div>
+    <div class="pill" id="p-model"><b></b>الذكاء</div>
+    <div class="pill" id="p-cam"><b></b>الكاميرا</div>
+  </div>
+</header>
 
-<div id="cam" class="z mirror">
+<section id="cam" class="mirror">
   <video id="video" playsinline muted autoplay></video>
   <canvas id="overlay"></canvas>
-  <div id="lock"></div>
-  <button id="start">[ ابدأ التشغيل ]</button>
-</div>
+  <div class="scan"></div><div class="sweep"></div>
+  <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+  <div class="hud-top"><span id="lock">◉ تم رصد الهدف</span><span id="fps" class="mono">-- FPS</span></div>
+  <div class="hud-bottom"><span id="handline">بانتظار التشغيل</span><span id="count">0<small>/5</small></span></div>
 
-<div class="box z" id="bars"></div>
+  <div id="splash">
+    <h1>نظام تتبع اليد</h1>
+    <p>تحكم بلمبات الـ ESP32 بأصابعك عن طريق الواي فاي</p>
+    <ol>
+      <li><span>1</span>اضغط «ابدأ» واسمح للكاميرا</li>
+      <li><span>2</span>وجّه كف يدك للكاميرا</li>
+      <li><span>3</span>ارفع أصابعك وشوف اللمبات تشتغل</li>
+    </ol>
+    <button id="start">ابدأ التشغيل</button>
+    <div id="err"></div>
+  </div>
+</section>
 
-<div class="btns z">
-  <button id="flip">قلب الكاميرا</button>
-  <button id="test">اختبار اللمبات</button>
-</div>
+<section id="leds"></section>
 
-<div class="box z" id="log"></div>
+<section id="term">
+  <div class="bar"><span>سجل النظام</span><span id="tx" class="mono">TX 0</span></div>
+  <div id="log"></div>
+</section>
+
+<nav>
+  <button id="flip"><svg viewBox="0 0 24 24"><path d="M3 7h13l-3-3M21 17H8l3 3"/></svg>قلب الكاميرا</button>
+  <button id="test"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></svg>اختبار اللمبات</button>
+  <button id="logbtn"><svg viewBox="0 0 24 24"><path d="M4 17l6-5-6-5M12 19h8"/></svg>السجل</button>
+</nav>
 
 <script src="https://unpkg.com/mqtt@4.3.7/dist/mqtt.min.js"></script>
 <script type="module">
@@ -69,38 +163,41 @@ import { FilesetResolver, HandLandmarker }
 // لازم يكون نفس الموضوع اللي في كود الـ ESP32
 const TOPIC = "handleds/583369c8a8bd/fingers";
 const BROKER = "wss://broker.hivemq.com:8884/mqtt";
-const NAMES = ["إبهام", "سبابة", "وسطى", "بنصر", "خنصر"];
-const GPIO = [23, 22, 21, 19, 18];
+// نفس ترتيب وألوان اللمبات على البريدبورد
+const LEDS = [
+  { name: "إبهام", pin: 23, c: "#3aa0ff" },
+  { name: "سبابة", pin: 22, c: "#ff4040" },
+  { name: "وسطى", pin: 21, c: "#ffd400" },
+  { name: "بنصر", pin: 19, c: "#e8f6ff" },
+  { name: "خنصر", pin: 18, c: "#3aa0ff" },
+];
 const LINKS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
   [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 
 const $ = (id) => document.getElementById(id);
 const video = $("video"), overlay = $("overlay"), ctx = overlay.getContext("2d");
 let facing = "user", stream = null, landmarker = null, client = null;
-let lastState = "", lastSent = 0, frames = 0, fpsT = performance.now(), running = false, lmIdx = 0;
+let lastState = "", lastSent = 0, frames = 0, fpsT = performance.now(), running = false, lmIdx = 0, txCount = 0;
 
 // ---------- واجهة ----------
 const logEl = $("log");
 function log(msg, cls = "") {
   const t = new Date().toTimeString().slice(0, 8);
   const d = document.createElement("div");
-  d.textContent = `${t} ${msg}`;
+  d.textContent = `${t}  ${msg}`;
   if (cls) d.className = cls;
   logEl.appendChild(d);
-  while (logEl.children.length > 40) logEl.firstChild.remove();
+  while (logEl.children.length > 60) logEl.firstChild.remove();
 }
-function setTag(id, ok, text) { const e = $(id); e.textContent = text; e.className = ok ? "ok" : "bad"; }
+function pill(id, state) { $(id).className = "pill " + state; }
 
-$("bars").innerHTML = NAMES.map((n, i) =>
-  `<div class="bar"><span>${n}</span><span class="dim">منفذ ${GPIO[i]}</span><i id="b${i}"></i><span id="s${i}" class="dim">طافي</span></div>`
+$("leds").innerHTML = LEDS.map((l, i) =>
+  `<div class="led" id="led${i}" style="--c:${l.c}"><div class="bulb"></div><div class="name">${l.name}</div><div class="pin mono">GPIO ${l.pin}</div></div>`
 ).join("");
 function showState(s) {
-  for (let i = 0; i < 5; i++) {
-    const on = s[i] === "1";
-    $("b" + i).className = on ? "on" : "";
-    $("s" + i).textContent = on ? "شغال" : "طافي";
-    $("s" + i).className = on ? "ok" : "dim";
-  }
+  let n = 0;
+  for (let i = 0; i < 5; i++) { const on = s[i] === "1"; n += on; $("led" + i).classList.toggle("on", on); }
+  $("count").firstChild.nodeValue = n;
 }
 showState("00000");
 
@@ -109,46 +206,47 @@ const rain = $("rain"), rc = rain.getContext("2d");
 let drops = [];
 function sizeRain() {
   rain.width = innerWidth; rain.height = innerHeight;
-  drops = Array(Math.ceil(innerWidth / 14)).fill(0).map(() => Math.random() * -innerHeight / 14);
+  drops = Array(Math.ceil(innerWidth / 16)).fill(0).map(() => Math.random() * -innerHeight / 16);
 }
 sizeRain(); addEventListener("resize", sizeRain);
-const CH = "0123456789ABCDEF<>/{}#$%&*+=?";
+const CH = "01アイウエオカキクケコ<>/{}#$%&*+=";
 setInterval(() => {
-  rc.fillStyle = "rgba(0,0,0,.12)"; rc.fillRect(0, 0, rain.width, rain.height);
-  rc.fillStyle = "#00ff41"; rc.font = "13px monospace";
+  rc.fillStyle = "rgba(2,7,5,.14)"; rc.fillRect(0, 0, rain.width, rain.height);
+  rc.fillStyle = "#00ff9c"; rc.font = "14px monospace";
   drops.forEach((y, i) => {
-    rc.fillText(CH[Math.random() * CH.length | 0], i * 14, y * 14);
-    drops[i] = y * 14 > rain.height && Math.random() > 0.96 ? 0 : y + 1;
+    rc.fillText(CH[Math.random() * CH.length | 0], i * 16, y * 16);
+    drops[i] = y * 16 > rain.height && Math.random() > 0.97 ? 0 : y + 1;
   });
-}, 60);
+}, 70);
 
-["بدء تشغيل النظام...", "بانتظار المشغّل"].forEach((m) => log(m, "hi"));
+log("بدء تشغيل النظام...", "hi");
 
-// ---------- MQTT ----------
+// ---------- الاتصال (MQTT) ----------
 function connectMqtt() {
-  if (!window.mqtt) { log("فشل تحميل مكتبة الاتصال", "bad"); return; }
+  if (!window.mqtt) { pill("p-link", "bad"); log("فشل تحميل مكتبة الاتصال", "bad"); return; }
   client = mqtt.connect(BROKER, {
     clientId: "iphone-" + Math.random().toString(16).slice(2, 10),
     keepalive: 30, reconnectPeriod: 2000, connectTimeout: 8000, clean: true,
   });
-  client.on("connect", () => { setTag("link", true, "[ متصل ]"); log("تم إنشاء اتصال آمن", "hi"); lastSent = 0; });
-  client.on("reconnect", () => { setTag("link", false, "[ إعادة ]"); });
-  client.on("offline", () => { setTag("link", false, "[ مقطوع ]"); log("انقطع الاتصال - جاري إعادة المحاولة", "bad"); });
+  client.on("connect", () => { pill("p-link", "ok"); log("تم الاتصال بالخادم ✓", "hi"); lastSent = 0; });
+  client.on("reconnect", () => pill("p-link", "wait"));
+  client.on("offline", () => { pill("p-link", "bad"); log("انقطع الاتصال، جاري إعادة المحاولة...", "bad"); });
   client.on("error", (e) => log("خطأ في الاتصال " + (e && e.message || ""), "bad"));
 }
 function send(s, quiet) {
   if (!client || !client.connected) return;
   client.publish(TOPIC, s, { qos: 0 });
   lastSent = performance.now();
+  $("tx").textContent = "TX " + (++txCount);
   if (!quiet) {
     const hex = [...(s + "\n")].map((c) => c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")).join(" ");
-    log(`إرسال ← ESP32: ${hex}`, "hi");
-    log(`قناع اللمبات=0b${s} [${[...s].filter((c) => c === "1").length}/5 شغالة]`);
+    log(`إرسال ← ESP32  ${hex}`, "hi");
   }
 }
 
 // ---------- الكاميرا ----------
 async function startCamera() {
+  pill("p-cam", "wait");
   if (stream) stream.getTracks().forEach((t) => t.stop());
   stream = await navigator.mediaDevices.getUserMedia({
     video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } }, audio: false,
@@ -156,10 +254,11 @@ async function startCamera() {
   video.srcObject = stream;
   await video.play();
   $("cam").classList.toggle("mirror", facing === "user");
-  log(`بث الكاميرا ${facing === "user" ? "الأمامية" : "الخلفية"} ..... تم`, "hi");
+  pill("p-cam", "ok");
+  log(`الكاميرا ${facing === "user" ? "الأمامية" : "الخلفية"} شغالة ✓`, "hi");
 }
 
-// ---------- منطق الأصابع (نفس منطق بايثون) ----------
+// ---------- منطق الأصابع ----------
 function fingers(lm, w = 1, h = 1) {
   // طريقة ما تتأثر باتجاه الكاميرا ولا يمين/يسار ولا ميلان اليد
   const d = (a, b) => Math.hypot((lm[a].x - lm[b].x) * w, (lm[a].y - lm[b].y) * h);
@@ -171,23 +270,27 @@ function fingers(lm, w = 1, h = 1) {
   return s.join("");
 }
 
-function draw(lm) {
+function draw(lm, state) {
   const w = overlay.width, h = overlay.height;
   ctx.clearRect(0, 0, w, h);
-  if (!lm) { $("lock").textContent = ""; return; }
-  ctx.strokeStyle = "#00b32d"; ctx.lineWidth = 3;
+  $("lock").classList.toggle("on", !!lm);
+  if (!lm) return;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(0,255,156,.55)"; ctx.lineWidth = 3;
   for (const [a, b] of LINKS) {
     ctx.beginPath(); ctx.moveTo(lm[a].x * w, lm[a].y * h); ctx.lineTo(lm[b].x * w, lm[b].y * h); ctx.stroke();
   }
-  ctx.fillStyle = "#00ff41";
-  for (const p of lm) { ctx.beginPath(); ctx.arc(p.x * w, p.y * h, 4, 0, 7); ctx.fill(); }
+  lm.forEach((p, i) => {
+    ctx.beginPath(); ctx.arc(p.x * w, p.y * h, i % 4 === 0 && i ? 6 : 3.5, 0, 7);
+    ctx.fillStyle = i % 4 === 0 && i ? (state[i / 4 - 1] === "1" ? LEDS[i / 4 - 1].c : "#1d4434") : "#00ff9c";
+    ctx.fill();
+  });
   const xs = lm.map((p) => p.x * w), ys = lm.map((p) => p.y * h);
-  const x0 = Math.min(...xs) - 20, y0 = Math.min(...ys) - 20, x1 = Math.max(...xs) + 20, y1 = Math.max(...ys) + 20, L = 24;
-  ctx.strokeStyle = "#00ff41"; ctx.lineWidth = 3;
+  const x0 = Math.min(...xs) - 22, y0 = Math.min(...ys) - 22, x1 = Math.max(...xs) + 22, y1 = Math.max(...ys) + 22, L = 22;
+  ctx.strokeStyle = "#00ff9c"; ctx.lineWidth = 3;
   for (const [cx, cy, dx, dy] of [[x0,y0,1,1],[x1,y0,-1,1],[x0,y1,1,-1],[x1,y1,-1,-1]]) {
     ctx.beginPath(); ctx.moveTo(cx + dx * L, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * L); ctx.stroke();
   }
-  $("lock").textContent = "تم رصد الهدف";
 }
 
 function loop() {
@@ -200,24 +303,27 @@ function loop() {
       lm = r.landmarks[0];
       const h = r.handedness[0][0];
       state = fingers(lm, video.videoWidth, video.videoHeight);
-      $("handline").textContent = `اليد: ${h.categoryName === "Left" ? "يمين" : "يسار"} — الدقة ${Math.round(h.score * 100)}%`;
-      const p = lm[lmIdx];
-      log(`نقطة[${String(lmIdx).padStart(2, "0")}] س=${p.x.toFixed(3)} ص=${p.y.toFixed(3)} ع=${p.z >= 0 ? "+" : ""}${p.z.toFixed(3)}`, "dim");
-      lmIdx = (lmIdx + 1) % 21;
+      $("handline").innerHTML = `يد ${h.categoryName === "Left" ? "يمين" : "يسار"} · <span class="mono">${Math.round(h.score * 100)}%</span>`;
+      if (frames % 3 === 0) {
+        const p = lm[lmIdx];
+        log(`نقطة[${String(lmIdx).padStart(2, "0")}]  x=${p.x.toFixed(3)} y=${p.y.toFixed(3)} z=${p.z.toFixed(3)}`, "dim");
+        lmIdx = (lmIdx + 1) % 21;
+      }
     } else {
-      $("handline").textContent = "اليد: جاري البحث" + ".".repeat((frames >> 3) % 4);
+      $("handline").textContent = "جاري البحث عن اليد" + ".".repeat((frames >> 3) % 4);
     }
-    draw(lm);
+    draw(lm, state);
     if (state !== lastState) { lastState = state; showState(state); send(state); }
     else if (performance.now() - lastSent > 2000) send(state, true);  // تذكير كل ثانيتين
     frames++;
     const now = performance.now();
-    if (now - fpsT > 1000) { $("fps").textContent = `${(frames * 1000 / (now - fpsT)).toFixed(0)} إطار/ث`; frames = 0; fpsT = now; }
+    if (now - fpsT > 1000) { $("fps").textContent = `${Math.round(frames * 1000 / (now - fpsT))} FPS`; frames = 0; fpsT = now; }
   }
   requestAnimationFrame(loop);
 }
 
 async function loadModel() {
+  pill("p-model", "wait");
   log("جاري تحميل نموذج الذكاء الاصطناعي...");
   const files = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
@@ -231,51 +337,57 @@ async function loadModel() {
   });
   try { landmarker = await HandLandmarker.createFromOptions(files, opts("GPU")); }
   catch { landmarker = await HandLandmarker.createFromOptions(files, opts("CPU")); }
-  setTag("model", true, "[ جاهز ]");
-  log("نموذج الذكاء الاصطناعي ........ جاهز", "hi");
+  pill("p-model", "ok");
+  log("نموذج الذكاء الاصطناعي جاهز ✓", "hi");
 }
 
 let wakeLock = null;
-async function keepAwake() {
-  try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {}
-}
+async function keepAwake() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && running) keepAwake();
 });
 
 $("start").onclick = async () => {
-  $("start").textContent = "[ جاري التحميل... ]";
+  const b = $("start");
+  b.disabled = true; b.textContent = "جاري التحميل..."; $("err").textContent = "";
   try {
     await Promise.all([startCamera(), landmarker ? null : loadModel()]);
-    $("start").remove();
+    $("splash").remove();
     keepAwake();
     running = true;
-    log("تم منح الصلاحية ✓", "hi");
+    log("النظام شغال ✓ ارفع يدك", "hi");
     requestAnimationFrame(loop);
   } catch (e) {
-    $("start").textContent = "[ حاول مرة ثانية ]";
-    log("خطأ: " + (e && (e.name + " " + e.message)), "bad");
-    if (e && e.name === "NotAllowedError") log("اسمح للكاميرا من إعدادات Safari", "bad");
+    b.disabled = false; b.textContent = "حاول مرة ثانية";
+    if (!stream) pill("p-cam", "bad");
+    const msg = e && e.name === "NotAllowedError"
+      ? "ما سمحت للكاميرا. روح الإعدادات ← Safari ← الكاميرا ← اسمح"
+      : "صار خطأ: " + (e && (e.message || e.name));
+    $("err").textContent = msg; log(msg, "bad");
   }
 };
 $("flip").onclick = async () => {
   facing = facing === "user" ? "environment" : "user";
-  try { await startCamera(); } catch (e) { log("خطأ في الكاميرا " + e.message, "bad"); }
+  if (!running) return log(`بتستخدم الكاميرا ${facing === "user" ? "الأمامية" : "الخلفية"}`);
+  try { await startCamera(); } catch (e) { pill("p-cam", "bad"); log("خطأ في الكاميرا " + e.message, "bad"); }
 };
 $("test").onclick = async () => {
+  if (!client || !client.connected) return log("الخادم مو متصل للحين", "bad");
   log("جاري اختبار اللمبات...", "hi");
   const was = running; running = false;
   for (let r = 0; r < 2; r++) for (let i = 0; i < 5; i++) {
-    send("00000".slice(0, i) + "1" + "00000".slice(i + 1), true);
+    const s = "00000".slice(0, i) + "1" + "00000".slice(i + 1);
+    send(s, true); showState(s);
     await new Promise((ok) => setTimeout(ok, 150));
   }
-  send("11111"); await new Promise((ok) => setTimeout(ok, 600)); send("00000");
-  lastState = "00000"; showState("00000");
+  send("11111"); showState("11111"); await new Promise((ok) => setTimeout(ok, 600));
+  send("00000"); showState("00000"); lastState = "00000";
   running = was; if (running) requestAnimationFrame(loop);
 };
+$("logbtn").onclick = () => $("term").classList.toggle("big");
 
 connectMqtt();
-window.__debug = { send, fingers, get landmarker() { return landmarker; }, loadModel, get client() { return client; } };
+window.__debug = { send, fingers, showState, get landmarker() { return landmarker; }, loadModel, get client() { return client; } };
 </script>
 </body>
 </html>
