@@ -29,7 +29,7 @@
   --gap:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg);color:var(--fg);font-family:var(--ar);font-size:15px;line-height:1.5;
+html{background:var(--bg);color:var(--fg);font-family:var(--ar);font-size:16px;line-height:1.55;
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 body{min-height:100dvh;display:flex;flex-direction:column;
   padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 86px)}
@@ -48,14 +48,14 @@ button{cursor:pointer;border:0;background:none}
 /* ---------- الرأس ---------- */
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:var(--gap)}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
-.mark{display:grid;grid-template-columns:repeat(5,6px);gap:3px;padding:8px 9px;border:1px solid var(--line2);border-radius:10px;background:var(--s1)}
-.mark i{width:6px;height:6px;border-radius:50%;background:#26262a;transition:background .15s,box-shadow .15s}
-.mark i.on{background:var(--c);box-shadow:0 0 6px var(--c)}
-.brand b{display:block;font-weight:600;font-size:15px;letter-spacing:-.01em}
-.brand small{display:block;font-size:11.5px;color:var(--fg3);margin-top:-1px;white-space:nowrap}
+.mark{display:grid;grid-template-columns:repeat(5,7px);gap:4px;padding:10px 11px;border:1px solid var(--line2);border-radius:10px;background:var(--s1)}
+.mark i{width:7px;height:7px;border-radius:50%;background:#26262a;transition:background .15s,box-shadow .15s}
+.mark i.on{background:var(--c);box-shadow:0 0 5px color-mix(in srgb,var(--c) 60%,transparent)}
+.brand b{display:block;font-weight:600;font-size:18px;letter-spacing:-.01em}
+.brand small{display:block;font-size:12.5px;color:var(--fg3);margin-top:-1px;white-space:nowrap}
 .status{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--line);border-radius:99px;
-  background:var(--s1);font-size:11.5px;color:var(--fg3);white-space:nowrap;transition:color .2s,border-color .2s}
+.pill{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border:1px solid var(--line);border-radius:99px;
+  background:var(--s1);font-size:12.5px;color:var(--fg3);white-space:nowrap;transition:color .2s,border-color .2s}
 .pill b{position:relative;width:6px;height:6px;border-radius:50%;background:var(--fg3)}
 .pill.ok{color:var(--fg2)} .pill.ok b{background:var(--ok)}
 .pill.wait b{background:var(--warn)} .pill.wait b::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--warn);animation:ping 1.2s var(--ease) infinite}
@@ -74,21 +74,21 @@ button.pill.ok{border-color:rgba(61,220,132,.3)}
 .panel{display:grid;gap:var(--gap);align-content:start}
 @media (min-width:900px){
   body{padding:22px 24px 24px;height:100dvh;overflow:hidden}
-  .layout{grid-template-columns:minmax(0,1fr) 400px;min-height:0}
+  .layout{grid-template-columns:minmax(0,1fr) 460px;min-height:0}
   .panel{overflow:auto;padding-inline-start:2px;padding-bottom:84px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
   .stage{height:auto!important;max-height:none!important;aspect-ratio:auto!important}
 }
 
 /* ---------- البطاقات (مع إضاءة تتبع الماوس) ---------- */
-.card{position:relative;border:1px solid var(--line);border-radius:var(--r3);background:var(--s1);padding:14px;isolation:isolate}
+.card{position:relative;border:1px solid var(--line);border-radius:22px;background:var(--s1);padding:18px;isolation:isolate}
 @media (hover:hover){
   .card::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:-1;opacity:0;transition:opacity .3s;
     background:radial-gradient(380px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.045),transparent 60%)}
   .card:hover::before{opacity:1}
 }
-.head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
-.head h2{font-size:13px;font-weight:500;color:var(--fg2)}
-.head p{font-size:12px;color:var(--fg3);text-align:left;transition:opacity .2s}
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:14px}
+.head h2{font-size:15px;font-weight:600;color:var(--fg)}
+.head p{font-size:13px;color:var(--fg3);text-align:left;transition:opacity .2s}
 
 /* ---------- الكاميرا ---------- */
 .stage{position:relative;overflow:hidden;padding:0;background:#050506;aspect-ratio:3/4;max-height:62svh;width:100%}
@@ -105,15 +105,15 @@ button.pill.ok{border-color:rgba(61,220,132,.3)}
 .stage.live .beam{opacity:.55} .stage.lock .beam{opacity:1}
 .hud{position:absolute;inset:16px 18px;z-index:2;display:flex;flex-direction:column;justify-content:space-between;pointer-events:none}
 .hud-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.tag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:99px;font-size:11.5px;
+.tag{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:99px;font-size:13px;
   background:rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.08);color:var(--fg2)}
 #lock{opacity:0;transform:translateY(-4px);transition:opacity .2s,transform .25s var(--ease);color:var(--fg)}
 #lock::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
 #lock.on{opacity:1;transform:none}
 .count{display:flex;align-items:flex-end;gap:4px;line-height:1}
-.digit{height:64px;overflow:hidden;font:500 64px/1 var(--mono);letter-spacing:-.04em}
-.digit span{display:block;height:64px;transition:transform .45s var(--spring)}
-.count small{font:400 18px/1 var(--mono);color:var(--fg3);padding-bottom:8px}
+.digit{height:84px;overflow:hidden;font:500 84px/1 var(--mono);letter-spacing:-.04em}
+.digit span{display:block;height:84px;transition:transform .32s var(--ease)}
+.count small{font:400 22px/1 var(--mono);color:var(--fg3);padding-bottom:10px}
 
 /* شاشة البداية */
 #splash{position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:28px;text-align:center;
@@ -142,23 +142,23 @@ button.pill.ok{border-color:rgba(61,220,132,.3)}
 #err{font-size:12.5px;color:#ffb3b5;min-height:1.2em;max-width:280px}
 
 /* ---------- اللمبات ---------- */
-#leds{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:16px 6px 12px;border-radius:var(--r2);
+#leds{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:22px 6px 16px;border-radius:var(--r2);
   background:linear-gradient(180deg,var(--s2),var(--s1));border:1px solid var(--line)}
-.led{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0;border-radius:var(--r1);transition:background .2s}
-.bulb{position:relative;width:30px;height:30px;border-radius:50%;
+.led{display:flex;flex-direction:column;align-items:center;gap:10px;padding:4px 0;border-radius:var(--r1);transition:background .2s}
+.bulb{position:relative;width:44px;height:44px;border-radius:50%;
   background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.18),transparent 45%),color-mix(in srgb,var(--c) 14%,#0d0d0f);
   box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 30%,transparent);transition:background .12s,box-shadow .12s,transform .2s var(--spring)}
-.led.on .bulb{background:radial-gradient(circle at 38% 32%,#fff 0,color-mix(in srgb,var(--c) 70%,#fff) 22%,var(--c) 60%);
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 60%,#fff),0 0 18px var(--c),0 0 42px color-mix(in srgb,var(--c) 45%,transparent)}
-.led .name{font-size:12.5px;font-weight:500}
-.led .pin{font-size:10.5px;color:var(--fg3)}
+.led.on .bulb{background:radial-gradient(circle at 38% 32%,#fff 0,color-mix(in srgb,var(--c) 55%,#fff) 26%,var(--c) 70%);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 55%,#fff),0 0 14px color-mix(in srgb,var(--c) 55%,transparent),0 0 36px color-mix(in srgb,var(--c) 22%,transparent)}
+.led .name{font-size:14.5px;font-weight:500}
+.led .pin{font-size:11.5px;color:var(--fg3)}
 #leds.manual .led{cursor:pointer}
 #leds.manual .led:hover{background:rgba(255,255,255,.035)}
 #leds.manual .led:active .bulb{transform:scale(.9)}
 
 /* المنزلق (Slider) */
 .row{display:flex;align-items:center;gap:12px}
-#bright{margin-top:14px;font-size:12.5px;color:var(--fg2)}
+#bright{margin-top:18px;font-size:14px;color:var(--fg2)}
 #bright.locked{opacity:.4}
 #bright .mono{width:40px;text-align:left;color:var(--fg);font-size:12px}
 input[type=range]{--p:100%;flex:1;height:20px;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
@@ -177,9 +177,9 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
 .seg{position:relative;display:grid;grid-template-columns:repeat(5,1fr);padding:3px;border-radius:var(--r2);background:var(--bg);border:1px solid var(--line)}
 .seg .ind{position:absolute;top:3px;bottom:3px;left:0;width:0;border-radius:9px;background:var(--s3);
   box-shadow:inset 0 0 0 1px var(--line2),0 1px 2px rgba(0,0,0,.5);transition:transform .35s var(--spring),width .35s var(--spring)}
-.seg button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 7px;border-radius:9px;
-  font-size:12px;color:var(--fg3);transition:color .2s}
-.seg button svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.seg button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:5px;padding:13px 2px 11px;border-radius:9px;
+  font-size:13.5px;color:var(--fg3);transition:color .2s}
+.seg button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .seg button:hover{color:var(--fg2)}
 .seg button[aria-pressed=true]{color:var(--fg)}
 
@@ -188,7 +188,7 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
 #fxbar > div{overflow:hidden}
 #fxbar.show{grid-template-rows:1fr;opacity:1;margin-top:12px}
 #fxs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.fx{position:relative;height:56px;border-radius:var(--r2);border:1px solid var(--line);background:var(--s2);font-size:12.5px;color:var(--fg2);
+.fx{position:relative;height:66px;border-radius:var(--r2);border:1px solid var(--line);background:var(--s2);font-size:14px;color:var(--fg2);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;transition:border-color .2s,color .2s,background .2s}
 .fx:hover{border-color:var(--line2);color:var(--fg)}
 .fx[aria-pressed=true]{border-color:var(--line3);color:var(--fg);background:var(--s3)}
@@ -197,11 +197,32 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
 .fx .dots i:nth-child(3){animation-delay:.24s} .fx .dots i:nth-child(4){animation-delay:.36s} .fx .dots i:nth-child(5){animation-delay:.48s}
 .fx.locked{opacity:.4}
 .fx.pro::after{content:"PWM";position:absolute;top:5px;left:6px;font:500 8px/1 var(--mono);color:var(--fg3);letter-spacing:.04em}
-.speed{margin-top:12px;font-size:12px;color:var(--fg3)}
+.speed{margin-top:14px;font-size:13.5px;color:var(--fg3)}
 .btn-stop{height:34px;padding:0 14px;border-radius:10px;font-size:12.5px;font-weight:500;color:#ffd5d6;
   border:1px solid rgba(255,90,95,.35);background:rgba(255,90,95,.1);display:inline-flex;align-items:center;gap:6px;transition:background .2s,transform .15s}
 .btn-stop:hover{background:rgba(255,90,95,.18)} .btn-stop:active{transform:scale(.96)}
 .btn-stop i{width:8px;height:8px;border-radius:2px;background:currentColor}
+
+/* ---------- الاتصالات ---------- */
+.conn{display:grid;border:1px solid var(--line);border-radius:var(--r2);overflow:hidden;background:var(--bg)}
+.crow{display:flex;align-items:center;gap:12px;min-height:50px;padding:10px 14px;font-size:14px}
+.crow + .crow{border-top:1px solid var(--line)}
+.crow b{position:relative;flex:none;width:8px;height:8px;border-radius:50%;background:var(--fg3);transition:background .3s}
+.crow.ok b{background:var(--ok)} .crow.bad b{background:var(--bad)} .crow.wait b{background:var(--warn)}
+.crow.wait b::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--warn);animation:ping 1.2s var(--ease) infinite}
+.crow.dev b{background:var(--line3)}
+.crow span{color:var(--fg2)}
+.crow span{flex:none}
+.crow em{margin-inline-start:auto;font-style:normal;color:var(--fg);font-size:13.5px;display:flex;align-items:center;gap:8px;text-align:left;min-width:0;white-space:nowrap}
+.crow em .nm{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;min-width:0;direction:ltr}
+.crow.bad em{color:#ffb3b5}
+.bars{display:inline-flex;align-items:flex-end;gap:2px;height:14px}
+.bars i{width:3px;border-radius:1px;background:var(--line2)}
+.bars i:nth-child(1){height:4px} .bars i:nth-child(2){height:7px} .bars i:nth-child(3){height:10px} .bars i:nth-child(4){height:14px}
+.bars i.on{background:var(--fg)}
+.mini{height:30px;padding:0 14px;border-radius:9px;font-size:13px;font-weight:500;background:var(--fg);color:#000;transition:transform .15s,opacity .2s}
+.mini:active{transform:scale(.95)} .mini:disabled{opacity:.5}
+#connSum.ok{color:var(--ok)} #connSum.bad{color:#ffb3b5}
 
 /* ---------- السجل ---------- */
 .console{padding:0;overflow:hidden;background:var(--bg)}
@@ -217,14 +238,14 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
 .dock{position:fixed;z-index:10;left:50%;bottom:calc(env(safe-area-inset-bottom) + 12px);transform:translateX(-50%);
   display:flex;gap:4px;padding:5px;border-radius:16px;background:rgba(17,17,19,.78);border:1px solid var(--line2);
   backdrop-filter:blur(16px) saturate(140%);-webkit-backdrop-filter:blur(16px) saturate(140%);box-shadow:0 12px 40px rgba(0,0,0,.6)}
-.dock button{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:68px;padding:8px 10px 6px;border-radius:11px;font-size:11px;color:var(--fg2);
+.dock button{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:74px;padding:10px 10px 8px;border-radius:12px;font-size:12.5px;color:var(--fg2);
   transition:background .2s,color .2s,transform .15s var(--ease)}
 .dock button:hover{background:rgba(255,255,255,.06);color:var(--fg)}
 .dock button:active{transform:scale(.94)}
-.dock svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.dock svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .dock .sep{width:1px;margin:6px 2px;background:var(--line2)}
 .dock #stop{color:#ffb3b5} .dock #stop:hover{background:rgba(255,90,95,.12)}
-@media (min-width:900px){.dock{left:24px;right:auto;transform:none;bottom:24px;width:400px;justify-content:space-between}
+@media (min-width:900px){.dock{left:24px;right:auto;transform:none;bottom:24px;width:460px;justify-content:space-between}
   .dock button{flex:1}}
 
 /* ---------- الإشعارات ---------- */
@@ -239,7 +260,7 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
 @keyframes beam{to{--beam:360deg}}
 @keyframes ping{from{transform:scale(.6);opacity:1}to{transform:scale(1.8);opacity:0}}
 @keyframes rise{from{opacity:0;transform:translateY(10px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
-@keyframes glowseq{0%,100%{opacity:.22;box-shadow:none}18%{opacity:1;box-shadow:0 0 14px var(--c),0 0 30px var(--c)}40%{opacity:.22;box-shadow:none}}
+@keyframes glowseq{0%,100%{opacity:.22;box-shadow:none}18%{opacity:1;box-shadow:0 0 12px color-mix(in srgb,var(--c) 60%,transparent)}40%{opacity:.22;box-shadow:none}}
 @keyframes shimmer{to{background-position:-150% 0}}
 @keyframes dotrun{0%,100%{opacity:.25}30%{opacity:1}}
 @keyframes caret{50%{opacity:0}}
@@ -247,7 +268,7 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
 @keyframes toastin{from{opacity:0;transform:translateY(-10px) scale(.96)}}
 @keyframes toastout{to{opacity:0;transform:translateY(-8px) scale(.97)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
-@media (max-width:380px){.digit,.digit span{height:52px;font-size:52px} .bulb{width:26px;height:26px} .dock button{min-width:60px}}
+@media (max-width:380px){.digit,.digit span{height:64px;font-size:64px} .bulb{width:36px;height:36px} .dock button{min-width:62px}}
 </style>
 </head>
 <body>
@@ -260,7 +281,7 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
   </div>
   <div class="status" role="status" aria-label="حالة الاتصال">
     <span class="pill wait" id="p-link"><b></b>الخادم</span>
-    <span class="pill" id="p-model"><b></b>النموذج</span>
+    <span class="pill" id="p-esp"><b></b>ESP32</span>
     <span class="pill" id="p-cam"><b></b>الكاميرا</span>
     <button class="pill" id="p-usb" title="اتصال بالكيبل"><b></b>USB</button>
   </div>
@@ -332,6 +353,19 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12);box-shadow:
       </div></div>
     </section>
 
+    <section class="card" id="conn">
+      <div class="head"><h2>الاتصالات</h2><p id="connSum">جاري الفحص…</p></div>
+      <div class="conn">
+        <div class="crow wait" id="c-link"><b></b><span>الخادم</span><em id="v-link">يتصل…</em></div>
+        <div class="crow" id="c-esp"><b></b><span>الـ ESP32</span><em id="v-esp">بانتظار الرد</em></div>
+        <div class="crow" id="c-ping"><b></b><span>سرعة الاستجابة</span><em id="v-ping" class="mono">—</em></div>
+        <div class="crow" id="c-wifi"><b></b><span>الشبكة</span><em id="v-wifi">—</em></div>
+        <div class="crow" id="c-usb"><b></b><span>كيبل USB</span><em id="v-usb"><button class="mini" id="usbBtn">اتصال</button></em></div>
+        <div class="crow" id="c-model"><b></b><span>نموذج اليد</span><em id="v-model">يتحمّل عند التشغيل</em></div>
+        <div class="crow dev"><b></b><span>الجهاز</span><em id="v-dev">—</em></div>
+      </div>
+    </section>
+
     <section class="card console" id="term">
       <div class="head"><h2>النشاط</h2></div>
       <div id="log" aria-live="off"></div>
@@ -356,14 +390,15 @@ import { FilesetResolver, HandLandmarker }
 // لازم يكون نفس الموضوع اللي في كود الـ ESP32
 const TOPIC = "handleds/583369c8a8bd/fingers";
 const BROKER = "wss://broker.hivemq.com:8884/mqtt";
-const STATUS_TOPIC = "handleds/583369c8a8bd/status";  // الـ ESP32 يكتب فيه نسخته
+const STATUS_TOPIC = "handleds/583369c8a8bd/status";  // الـ ESP32 يكتب فيه حالته
+const PONG_TOPIC = "handleds/583369c8a8bd/pong";      // رد الـ ESP32 على سؤال الصفحة
 // نفس ترتيب وألوان اللمبات على البريدبورد
 const LEDS = [
-  { name: "إبهام", pin: 23, c: "#ff4040" },  // أحمر
-  { name: "سبابة", pin: 22, c: "#ffd400" },  // أصفر
-  { name: "وسطى", pin: 21, c: "#3aa0ff" },  // أزرق
-  { name: "بنصر", pin: 19, c: "#2bff6b" },  // أخضر
-  { name: "خنصر", pin: 18, c: "#3aa0ff" },  // أزرق
+  { name: "إبهام", pin: 23, c: "#ff8a8a" },  // أحمر ناعم
+  { name: "سبابة", pin: 22, c: "#ffd88a" },  // أصفر ناعم
+  { name: "وسطى", pin: 21, c: "#8ac4ff" },  // أزرق ناعم
+  { name: "بنصر", pin: 19, c: "#8fe3b4" },  // أخضر ناعم
+  { name: "خنصر", pin: 18, c: "#8ac4ff" },  // أزرق ناعم
 ];
 const LINKS = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],
   [9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
@@ -384,7 +419,14 @@ function log(msg, cls = "") {
   while (logEl.children.length > 60) logEl.firstChild.remove();
   if (cls === "bad") toast(msg, "bad");
 }
-function pill(id, state) { $(id).className = "pill " + state; }
+function pill(id, state) { const el = $(id); if (!el) return; el.classList.remove("ok", "wait", "bad"); if (state) el.classList.add(state); }
+// صف في لوحة الاتصالات: حالة + نص
+function row(id, state, text) { pill("c-" + id, state); if (text !== undefined) $("v-" + id).textContent = text; }
+function linkState(st) {
+  pill("p-link", st);
+  row("link", st, { ok: "متصل", wait: "يتصل…", bad: "مقطوع، يعيد المحاولة" }[st]);
+  renderConn();
+}
 
 // إشعار صغير فوق الشاشة
 let lastToast = "";
@@ -457,24 +499,26 @@ log("أهلاً، اضغط ابدأ للتشغيل", "hi");
 
 // ---------- الاتصال (MQTT) ----------
 function connectMqtt() {
-  if (!window.mqtt) { pill("p-link", "bad"); log("فشل تحميل مكتبة الاتصال", "bad"); return; }
+  if (!window.mqtt) { linkState("bad"); log("فشل تحميل مكتبة الاتصال", "bad"); return; }
   client = mqtt.connect(BROKER, {
     clientId: "iphone-" + Math.random().toString(16).slice(2, 10),
-    keepalive: 15, reconnectPeriod: 2000, connectTimeout: 8000, clean: true,
+    keepalive: 15, reconnectPeriod: 1500, connectTimeout: 8000, clean: true,
     // لو الصفحة انقطعت فجأة (قفلت Safari أو الجوال)، الخادم يطفي اللمبات بدالها
     will: { topic: TOPIC, payload: "00000", qos: 0, retain: false },
   });
   client.on("connect", () => {
-    pill("p-link", "ok"); log("تم الاتصال", "hi"); lastSent = 0;
-    client.subscribe(STATUS_TOPIC);
+    linkState("ok"); log("تم الاتصال بالخادم", "hi"); lastSent = 0;
+    client.subscribe([STATUS_TOPIC, PONG_TOPIC]);
+    pingEsp();
     resync();  // أول ما نتصل: نرسل الحالة الحالية عشان ما تبقى لمبات عالقة من قبل
   });
   client.on("message", (t, m) => {
+    if (t === PONG_TOPIC) return onPong(m.toString());
     if (t !== STATUS_TOPIC) return;
-    try { const st = JSON.parse(m.toString()); setFw(st.fw || 1, st.ip); } catch {}
+    try { applyStatus(JSON.parse(m.toString())); } catch {}
   });
-  client.on("reconnect", () => pill("p-link", "wait"));
-  client.on("offline", () => { pill("p-link", "bad"); log("انقطع الاتصال، جاري إعادة المحاولة...", "bad"); });
+  client.on("reconnect", () => linkState("wait"));
+  client.on("offline", () => { linkState("bad"); log("انقطع الاتصال بالخادم، جاري إعادة المحاولة…", "err"); });
   client.on("error", (e) => log("خطأ في الاتصال " + (e && e.message || ""), "err"));  // بالسجل بس، بدون إشعار مزعج
 }
 function send(s, quiet) {
@@ -532,9 +576,12 @@ function draw(lm, state) {
   });
 }
 
+let lastVideoTime = -1;
 function loop() {
   if (!running) return;
-  if (video.readyState >= 2) {
+  // نحلل الصورة بس لما تجي صورة جديدة من الكاميرا (بدون تكرار = أخف وأسرع)
+  if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+    lastVideoTime = video.currentTime;
     if (overlay.width !== video.videoWidth) { overlay.width = video.videoWidth; overlay.height = video.videoHeight; }
     const r = landmarker.detectForVideo(video, performance.now());
     let state = "00000", lm = null;
@@ -559,7 +606,7 @@ function loop() {
 }
 
 async function loadModel() {
-  pill("p-model", "wait");
+  row("model", "wait", "يتحمّل…");
   log("جاري تحميل نموذج الذكاء الاصطناعي...");
   const files = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
@@ -573,7 +620,7 @@ async function loadModel() {
   });
   try { landmarker = await HandLandmarker.createFromOptions(files, opts("GPU")); }
   catch { landmarker = await HandLandmarker.createFromOptions(files, opts("CPU")); }
-  pill("p-model", "ok");
+  row("model", "ok", "جاهز");
   log("نموذج الذكاء الاصطناعي جاهز ✓", "hi");
 }
 
@@ -687,8 +734,12 @@ function resync() {
 function moveInd() {
   const seg = $("modes"), btn = seg.querySelector(`[data-mode="${mode}"]`), ind = seg.querySelector(".ind");
   const sr = seg.getBoundingClientRect(), br = btn.getBoundingClientRect();
+  if (!br.width) return;
+  const first = !seg.dataset.ready;
+  if (first) ind.style.transition = "none";  // أول مرة: يظهر بمكانه بدون ما ينزلق
   ind.style.width = br.width + "px";
   ind.style.transform = `translateX(${br.left - sr.left - seg.clientLeft}px)`;
+  if (first) { ind.getBoundingClientRect(); ind.style.transition = ""; seg.dataset.ready = "1"; }
 }
 addEventListener("resize", moveInd);
 if ("ResizeObserver" in window) new ResizeObserver(() => moveInd()).observe($("modes"));
@@ -779,7 +830,7 @@ async function readLoop(p) {
       let i;
       while ((i = buf.indexOf(NL)) >= 0) {
         const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
-        if (line.startsWith("STATUS ")) { try { const st = JSON.parse(line.slice(7)); setFw(st.fw || 1, st.ip); } catch {} }
+        if (line.startsWith("STATUS ")) { try { applyStatus(JSON.parse(line.slice(7)), true); } catch {} }
       }
     }
   } catch {}
@@ -789,7 +840,7 @@ async function openPort(p) {
   // بدونها الـ ESP32 ممكن يعيد التشغيل لما ينفتح المنفذ
   try { await p.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch {}
   port = p; writer = p.writable.getWriter();
-  pill("p-usb", "ok");
+  pill("p-usb", "ok"); row("usb", "ok"); $("v-usb").textContent = "متصل"; renderConn();
   log("تم الاتصال بالـ ESP32 عبر USB ✓", "hi");
   toast("تم الاتصال عبر USB");
   readLoop(p);
@@ -809,12 +860,88 @@ async function connectUSB() {
 }
 if ("serial" in navigator) {
   $("p-usb").onclick = connectUSB;
+  usbIdle();
   navigator.serial.addEventListener("disconnect", (e) => {
-    if (e.target === port) { port = null; writer = null; pill("p-usb", ""); log("انفصل كيبل USB", "bad"); }
+    if (e.target === port) { port = null; writer = null; pill("p-usb", ""); usbIdle(); log("انفصل كيبل USB", "bad"); renderConn(); }
   });
   navigator.serial.getPorts().then((ps) => { if (ps[0]) openPort(ps[0]).catch(() => {}); });  // يرجع يتصل لحاله
 } else {
   $("p-usb").style.display = "none";  // الآيفون ما يدعم USB في المتصفح
+  $("v-usb").textContent = "متاح من Chrome على الكمبيوتر";
+}
+
+// ---------- صحة الـ ESP32: هل يرد؟ وكم سرعة الاستجابة؟ ----------
+const esp = { online: null, fw: 0, ip: "", ssid: "", rssi: null, up: 0, lastPong: 0, rtt: null, lastUsb: 0 };
+let pingNonce = "", pingT0 = 0;
+function applyStatus(st, viaUsb) {
+  esp.online = st.online !== false;
+  if (viaUsb) esp.lastUsb = performance.now();
+  if (st.fw) { esp.fw = st.fw; setFw(st.fw, st.ip); }
+  if (st.ip) esp.ip = st.ip;
+  if (st.ssid) esp.ssid = st.ssid;
+  if (typeof st.rssi === "number") esp.rssi = st.rssi;
+  if (st.up) esp.up = st.up;
+  renderConn();
+}
+function pingEsp() {
+  if (!client || !client.connected || document.visibilityState === "hidden") return;
+  pingNonce = Math.random().toString(36).slice(2, 8);
+  pingT0 = performance.now();
+  client.publish(TOPIC, "?" + pingNonce, { qos: 0 });
+}
+function onPong(msg) {
+  const [nonce, rssi] = msg.split("|");
+  if (nonce === pingNonce) esp.rtt = Math.round(performance.now() - pingT0);
+  if (rssi) esp.rssi = Number(rssi);
+  esp.lastPong = performance.now(); esp.online = true;
+  renderConn();
+}
+setInterval(() => { pingEsp(); renderConn(); }, 3000);
+
+function bars(rssi) {
+  const n = rssi == null ? 0 : rssi > -55 ? 4 : rssi > -65 ? 3 : rssi > -75 ? 2 : 1;
+  return `<span class="bars" aria-hidden="true">${[1, 2, 3, 4].map((i) => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
+}
+function ago(s) {
+  const m = Math.floor(s / 60), h = Math.floor(m / 60);
+  return h ? `${h} ساعة ${m % 60} دقيقة` : m ? `${m} دقيقة` : `${s} ثانية`;
+}
+function renderConn() {
+  const linkOk = !!(client && client.connected);
+  const fresh = performance.now() - esp.lastPong < 8000;
+  const usbOk = !!writer;
+  let st = "", txt = "بانتظار الرد";
+  if (usbOk && esp.lastUsb) { st = "ok"; txt = "متصل بالكيبل"; }
+  else if (esp.fw >= 3) {
+    if (fresh) { st = "ok"; txt = "شغال ويرد"; }
+    else if (esp.online === false) { st = "bad"; txt = "غير متصل"; }
+    else if (linkOk) { st = "wait"; txt = "ما يرد…"; }
+    else txt = "بانتظار الخادم";
+  } else if (esp.fw) { st = esp.online === false ? "bad" : "ok"; txt = esp.online === false ? "غير متصل" : "متصل (نسخة قديمة)"; }
+  else if (linkOk) st = "wait";
+  pill("p-esp", st); row("esp", st, txt);
+
+  if (fresh && esp.rtt != null) row("ping", esp.rtt < 350 ? "ok" : esp.rtt < 800 ? "wait" : "bad", `${esp.rtt} ms`);
+  else row("ping", "", "—");
+
+  if (esp.ssid || esp.rssi != null) {
+    pill("c-wifi", esp.rssi == null ? "" : esp.rssi > -70 ? "ok" : esp.rssi > -80 ? "wait" : "bad");
+    const w = $("v-wifi"), nm = document.createElement("span");
+    nm.className = "nm"; nm.textContent = esp.ssid || ""; nm.title = esp.ssid || "";
+    w.replaceChildren(nm); w.insertAdjacentHTML("beforeend", bars(esp.rssi));
+  }
+  $("v-dev").textContent = esp.fw ? [`نسخة ${esp.fw}`, esp.ip].filter(Boolean).join(" · ") : "—";
+  $("v-dev").title = esp.up ? "شغال من " + ago(esp.up) : "";
+
+  const sum = $("connSum");
+  sum.className = st === "ok" ? "ok" : st === "bad" ? "bad" : "";
+  sum.textContent = st === "ok" ? (usbOk && linkOk ? "واي فاي + USB" : usbOk ? "عبر USB" : "عبر الواي فاي")
+    : st === "bad" ? "الـ ESP32 غير متصل" : "جاري الفحص…";
+}
+function usbIdle() {
+  row("usb", "");
+  $("v-usb").innerHTML = '<button class="mini" id="usbBtn">اتصال</button>';
+  $("usbBtn").onclick = () => connectUSB();
 }
 
 // ---------- السطوع ----------
