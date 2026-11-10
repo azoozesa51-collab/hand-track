@@ -160,11 +160,14 @@ async function startCamera() {
 }
 
 // ---------- منطق الأصابع (نفس منطق بايثون) ----------
-function fingers(lm, label) {
-  // الصورة الخام مو معكوسة، فتسمية MediaPipe معكوسة: "Left" = يدك اليمين
-  const thumb = label === "Left" ? lm[4].x > lm[3].x : lm[4].x < lm[3].x;
+function fingers(lm, w = 1, h = 1) {
+  // طريقة ما تتأثر باتجاه الكاميرا ولا يمين/يسار ولا ميلان اليد
+  const d = (a, b) => Math.hypot((lm[a].x - lm[b].x) * w, (lm[a].y - lm[b].y) * h);
+  // الإبهام: مرفوع لما رأسه يبعد عن قاعدة الخنصر أكثر من مفصله الأول بوضوح
+  const thumb = d(4, 17) > d(2, 17) * 1.05;
   const s = [thumb ? 1 : 0];
-  for (const tip of [8, 12, 16, 20]) s.push(lm[tip].y < lm[tip - 2].y ? 1 : 0);
+  // باقي الأصابع: مرفوع لما رأسه أبعد عن الرسغ من مفصله الأوسط
+  for (const tip of [8, 12, 16, 20]) s.push(d(tip, 0) > d(tip - 2, 0) * 1.1 ? 1 : 0);
   return s.join("");
 }
 
@@ -196,7 +199,7 @@ function loop() {
     if (r.landmarks && r.landmarks.length) {
       lm = r.landmarks[0];
       const h = r.handedness[0][0];
-      state = fingers(lm, h.categoryName);
+      state = fingers(lm, video.videoWidth, video.videoHeight);
       $("handline").textContent = `اليد: ${h.categoryName === "Left" ? "يمين" : "يسار"} — الدقة ${Math.round(h.score * 100)}%`;
       const p = lm[lmIdx];
       log(`نقطة[${String(lmIdx).padStart(2, "0")}] س=${p.x.toFixed(3)} ص=${p.y.toFixed(3)} ع=${p.z >= 0 ? "+" : ""}${p.z.toFixed(3)}`, "dim");
