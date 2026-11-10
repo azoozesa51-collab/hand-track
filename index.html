@@ -119,7 +119,9 @@
   #log .hi { color:var(--txt); } #log .bad { color:var(--red); } #log .dim { color:var(--dim); }
 
   /* الأزرار */
-  nav { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  nav { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+  nav button#stop { color:#ffd6da; border-color:rgba(255,77,94,.55); background:rgba(255,77,94,.12); }
+  nav button#stop:active { background:var(--red); color:#fff; }
   nav button { font:500 13px var(--ar); color:var(--txt); background:var(--panel); border:1px solid var(--line2); border-radius:12px; padding:11px 4px;
                display:flex; align-items:center; justify-content:center; gap:6px; }
   nav button:active { background:var(--g); color:#00140c; }
@@ -186,7 +188,9 @@
     <button class="chip" data-fx="wave" data-pwm>موجة</button>
     <button class="chip" data-fx="sparkle" data-pwm>نجوم</button>
   </div>
-  <label class="speed">🐢<input type="range" id="speed" min="1" max="10" value="5">🐇</label>
+  <div class="speed">🐢<input type="range" id="speed" min="1" max="10" value="5">🐇
+    <button class="chip" id="fxstop" style="flex:none;padding:8px 14px;color:#ffd6da;border-color:rgba(255,77,94,.55);background:rgba(255,77,94,.12)">⏹ إيقاف</button>
+  </div>
 </section>
 
 <section id="term">
@@ -195,8 +199,9 @@
 </section>
 
 <nav>
-  <button id="flip"><svg viewBox="0 0 24 24"><path d="M3 7h13l-3-3M21 17H8l3 3"/></svg>قلب الكاميرا</button>
-  <button id="test"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></svg>اختبار اللمبات</button>
+  <button id="flip"><svg viewBox="0 0 24 24"><path d="M3 7h13l-3-3M21 17H8l3 3"/></svg>الكاميرا</button>
+  <button id="test"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V16h8v-1.3A7 7 0 0 0 12 2z"/></svg>اختبار</button>
+  <button id="stop"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>إطفاء</button>
   <button id="logbtn"><svg viewBox="0 0 24 24"><path d="M4 17l6-5-6-5M12 19h8"/></svg>السجل</button>
 </nav>
 
@@ -291,9 +296,15 @@ function connectMqtt() {
   if (!window.mqtt) { pill("p-link", "bad"); log("فشل تحميل مكتبة الاتصال", "bad"); return; }
   client = mqtt.connect(BROKER, {
     clientId: "iphone-" + Math.random().toString(16).slice(2, 10),
-    keepalive: 30, reconnectPeriod: 2000, connectTimeout: 8000, clean: true,
+    keepalive: 15, reconnectPeriod: 2000, connectTimeout: 8000, clean: true,
+    // لو الصفحة انقطعت فجأة (قفلت Safari أو الجوال)، الخادم يطفي اللمبات بدالها
+    will: { topic: TOPIC, payload: "00000", qos: 0, retain: false },
   });
-  client.on("connect", () => { pill("p-link", "ok"); log("تم الاتصال بالخادم ✓", "hi"); lastSent = 0; client.subscribe(STATUS_TOPIC); });
+  client.on("connect", () => {
+    pill("p-link", "ok"); log("تم الاتصال بالخادم ✓", "hi"); lastSent = 0;
+    client.subscribe(STATUS_TOPIC);
+    resync();  // أول ما نتصل: نرسل الحالة الحالية عشان ما تبقى لمبات عالقة من قبل
+  });
   client.on("message", (t, m) => {
     if (t !== STATUS_TOPIC) return;
     try { const st = JSON.parse(m.toString()); setFw(st.fw || 1, st.ip); } catch {}
@@ -417,9 +428,25 @@ async function loadModel() {
 
 let wakeLock = null;
 async function keepAwake() { try { wakeLock = await navigator.wakeLock?.request("screen"); } catch {} }
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && running) keepAwake();
-});
+// لما تطلع من الصفحة (تقفل الشاشة أو تروح تطبيق ثاني): نوقف التأثيرات ونطفي اللمبات
+// ولما ترجع: نكمل نفس الوضع، ونشغّل الكاميرا من جديد لو الآيفون وقفها
+function goAway() {
+  clearTimeout(fxTimer); fxTimer = null;
+  cancelTest();
+  if (lastState && lastState !== "00000") { send("00000", true); lastState = "00000"; showState("00000"); }
+}
+async function comeBack() {
+  if (running) {
+    keepAwake();
+    const t = stream && stream.getVideoTracks()[0];
+    if (!t || t.readyState === "ended" || video.paused) {
+      try { await startCamera(); } catch (e) { pill("p-cam", "bad"); log("ما قدرت أرجع الكاميرا، اضغط قلب الكاميرا", "bad"); }
+    }
+  }
+  resync();
+}
+document.addEventListener("visibilitychange", () => (document.visibilityState === "visible" ? comeBack() : goAway()));
+addEventListener("pagehide", goAway);
 
 $("start").onclick = async () => {
   const b = $("start");
@@ -492,8 +519,18 @@ function fxTick() {
 }
 function output(s) { lastState = s; showState(s); send(s); }
 
+// يرسل الحالة الصحيحة للوضع الحالي (بعد الاتصال أو الرجوع للصفحة)
+function resync() {
+  if (testing || document.visibilityState === "hidden") return;
+  if (mode === "fx") { if (!fxTimer) fxTick(); }
+  else if (mode === "manual") output(manual);
+  else if (!running) output("00000");  // التتبع بدون كاميرا = كلها طافية
+  else lastState = "";                  // التتبع شغال: الإطار الجاي يرسل الحالة
+}
+
 function setMode(m) {
   mode = m;
+  cancelTest();
   clearTimeout(fxTimer); fxTimer = null;
   document.querySelectorAll("#modes .chip").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
   $("fxbar").classList.toggle("show", m === "fx");
@@ -521,19 +558,39 @@ document.querySelectorAll(".led").forEach((el) => (el.onclick = () => {
 // تذكير للـ ESP32 في الوضع اليدوي (لو رجع اتصل)
 setInterval(() => { if (mode === "manual" && !testing && performance.now() - lastSent > 2000) send(manual, true); }, 1000);
 
+// اختبار اللمبات: يتوقف لو غيّرت الوضع أو ضغطت إطفاء
+let testRun = 0;
+function cancelTest() { if (testing) { testRun++; testing = false; } }
 $("test").onclick = async () => {
   if (!(client && client.connected) && !writer) return log("مو متصل بالـ ESP32 للحين", "bad");
   if (testing) return;
   log("جاري اختبار اللمبات...", "hi");
-  testing = true; clearTimeout(fxTimer);
-  for (let r = 0; r < 2; r++) for (let i = 0; i < 5; i++) {
-    send(oneHot(i), true); showState(oneHot(i));
-    await new Promise((ok) => setTimeout(ok, 150));
+  const run = ++testRun;
+  testing = true; clearTimeout(fxTimer); fxTimer = null;
+  const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
+  const steps = [];
+  for (let r = 0; r < 2; r++) for (let i = 0; i < 5; i++) steps.push([oneHot(i), 150]);
+  steps.push(["11111", 600]);
+  for (const [s, ms] of steps) {
+    if (run !== testRun) return;  // انلغى
+    send(s, true); showState(s);
+    await wait(ms);
   }
-  send("11111"); showState("11111"); await new Promise((ok) => setTimeout(ok, 600));
+  if (run !== testRun) return;
   testing = false;
   setMode(mode);
 };
+
+// زر الإطفاء: يوقف كل شي ويطفي اللمبات
+$("stop").onclick = () => {
+  cancelTest();
+  clearTimeout(fxTimer); fxTimer = null;
+  manual = "00000";
+  if (mode === "fx" || mode === "manual") setMode("track");
+  output("00000");
+  log("⏹ تم إطفاء كل اللمبات", "hi");
+};
+$("fxstop").onclick = () => $("stop").onclick();
 $("logbtn").onclick = () => $("term").classList.toggle("big");
 
 // ---------- اتصال USB (من Chrome على الكمبيوتر) ----------
