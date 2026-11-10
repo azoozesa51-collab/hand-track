@@ -95,6 +95,12 @@
   #fxbar .chip.on { background:transparent; color:var(--g); border-color:var(--g); }
   .speed { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--dim); }
   .speed input { flex:1; accent-color:var(--g); }
+  #fxs { grid-template-columns:repeat(4,1fr); }
+  #bright { grid-column:1/-1; display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12px; color:var(--dim); }
+  #bright input { flex:1; accent-color:var(--g); }
+  #bright .mono { width:34px; text-align:center; color:var(--txt); }
+  #bright.locked { opacity:.45; }
+  #fwnote { grid-column:1/-1; text-align:center; font-size:11px; color:var(--amber); margin-top:4px; }
   #hint { grid-column:1/-1; text-align:center; font-size:12px; color:var(--dim); margin-bottom:4px; }
   #leds.manual .led { cursor:pointer; }
   #leds.manual .bulb { opacity:.55; }
@@ -173,6 +179,9 @@
     <button class="chip" data-fx="blink">وميض</button>
     <button class="chip" data-fx="random">عشوائي</button>
     <button class="chip" data-fx="fill">تعبئة</button>
+    <button class="chip" data-fx="breath" data-pwm>تنفّس</button>
+    <button class="chip" data-fx="wave" data-pwm>موجة</button>
+    <button class="chip" data-fx="sparkle" data-pwm>نجوم</button>
   </div>
   <label class="speed">🐢<input type="range" id="speed" min="1" max="10" value="5">🐇</label>
 </section>
@@ -196,6 +205,7 @@ import { FilesetResolver, HandLandmarker }
 // لازم يكون نفس الموضوع اللي في كود الـ ESP32
 const TOPIC = "handleds/583369c8a8bd/fingers";
 const BROKER = "wss://broker.hivemq.com:8884/mqtt";
+const STATUS_TOPIC = "handleds/583369c8a8bd/status";  // الـ ESP32 يكتب فيه نسخته
 // نفس ترتيب وألوان اللمبات على البريدبورد
 const LEDS = [
   { name: "إبهام", pin: 23, c: "#ff4040" },  // أحمر
@@ -226,10 +236,29 @@ function pill(id, state) { $(id).className = "pill " + state; }
 
 $("leds").innerHTML = `<div id="hint"></div>` + LEDS.map((l, i) =>
   `<div class="led" id="led${i}" data-i="${i}" style="--c:${l.c}"><div class="bulb"></div><div class="name">${l.name}</div><div class="pin mono">GPIO ${l.pin}</div></div>`
-).join("");
+).join("") + `<label id="bright" class="locked">☀️ السطوع<input type="range" id="level" min="5" max="255" value="255" disabled><span class="mono" id="lvl">100%</span></label>
+<div id="fwnote">⏳ التحكم بالسطوع يحتاج تحديث الـ ESP32</div>`;
+
+let fw = 1;          // نسخة كود الـ ESP32 (تجي من الـ ESP32 نفسه)
+let level = 255;     // السطوع العام
+try { level = Number(localStorage.getItem("level")) || 255; } catch {}
+$("level").value = level;
+
+function paintBulb(i, v) {  // v من 0 إلى 255
+  const el = $("led" + i), b = el.querySelector(".bulb");
+  el.classList.toggle("on", v > 0);
+  b.style.opacity = v > 0 ? (0.35 + 0.65 * v / 255).toFixed(2) : "";
+  b.style.filter = v > 0 ? `brightness(${(0.55 + 0.45 * v / 255).toFixed(2)})` : "";
+}
 function showState(s) {
+  if (s[0] === "P") return showLevels(s.slice(1).split(",").map(Number));
   let n = 0;
-  for (let i = 0; i < 5; i++) { const on = s[i] === "1"; n += on; $("led" + i).classList.toggle("on", on); }
+  for (let i = 0; i < 5; i++) { const on = s[i] === "1"; n += on; paintBulb(i, on ? (fw >= 2 ? level : 255) : 0); }
+  $("count").firstChild.nodeValue = n;
+}
+function showLevels(v) {
+  let n = 0;
+  v.forEach((x, i) => { paintBulb(i, x); n += x > 0; });
   $("count").firstChild.nodeValue = n;
 }
 showState("00000");
@@ -261,7 +290,11 @@ function connectMqtt() {
     clientId: "iphone-" + Math.random().toString(16).slice(2, 10),
     keepalive: 30, reconnectPeriod: 2000, connectTimeout: 8000, clean: true,
   });
-  client.on("connect", () => { pill("p-link", "ok"); log("تم الاتصال بالخادم ✓", "hi"); lastSent = 0; });
+  client.on("connect", () => { pill("p-link", "ok"); log("تم الاتصال بالخادم ✓", "hi"); lastSent = 0; client.subscribe(STATUS_TOPIC); });
+  client.on("message", (t, m) => {
+    if (t !== STATUS_TOPIC) return;
+    try { const st = JSON.parse(m.toString()); setFw(st.fw || 1, st.ip); } catch {}
+  });
   client.on("reconnect", () => pill("p-link", "wait"));
   client.on("offline", () => { pill("p-link", "bad"); log("انقطع الاتصال، جاري إعادة المحاولة...", "bad"); });
   client.on("error", (e) => log("خطأ في الاتصال " + (e && e.message || ""), "bad"));
@@ -435,9 +468,20 @@ function fxFrame(k) {
   let r; do { r = Array.from({ length: 5 }, () => (Math.random() < 0.45 ? "1" : "0")).join(""); } while (r === lastState);
   return r;
 }
-const fxDelay = () => 650 - Number($("speed").value) * 55;  // 600ms .. 100ms
+const PWM_FX = ["breath", "wave", "sparkle"];
+let phase = 0, sparks = [0, 0, 0, 0, 0];
+function pwmFrame() {
+  const sp = Number($("speed").value);
+  phase += 0.03 + sp * 0.025;
+  let v;
+  if (fx === "breath") { const b = (1 - Math.cos(phase)) / 2; v = [0, 0, 0, 0, 0].map(() => b); }
+  else if (fx === "wave") v = [0, 1, 2, 3, 4].map((i) => Math.max(0, Math.sin(phase - i * 0.9)));
+  else { sparks = sparks.map((x) => x * (0.86 - sp * 0.02)); if (Math.random() < 0.25 + sp * 0.04) sparks[Math.random() * 5 | 0] = 1; v = sparks; }
+  return "P" + v.map((x) => Math.round(x * level)).join(",");
+}
+const fxDelay = () => PWM_FX.includes(fx) ? 90 : 650 - Number($("speed").value) * 55;  // 600ms .. 100ms
 function fxTick() {
-  const s = fxFrame(fxStep++);
+  const s = PWM_FX.includes(fx) ? pwmFrame() : fxFrame(fxStep++);
   lastState = s; showState(s); send(s, true);
   fxTimer = setTimeout(fxTick, fxDelay());
 }
@@ -458,6 +502,7 @@ function setMode(m) {
 }
 document.querySelectorAll("#modes .chip").forEach((b) => (b.onclick = () => setMode(b.dataset.mode)));
 document.querySelectorAll("#fxs .chip").forEach((b) => (b.onclick = () => {
+  if (b.hasAttribute("data-pwm") && fw < 2) return log("هذا التأثير يحتاج تحديث الـ ESP32", "bad");
   fx = b.dataset.fx;
   document.querySelectorAll("#fxs .chip").forEach((x) => x.classList.toggle("on", x === b));
   if (mode === "fx") setMode("fx");
@@ -486,9 +531,33 @@ $("test").onclick = async () => {
 };
 $("logbtn").onclick = () => $("term").classList.toggle("big");
 
+// ---------- السطوع ----------
+function setFw(v, ip) {
+  const was = fw; fw = v;
+  const ok = fw >= 2;
+  $("bright").classList.toggle("locked", !ok); $("level").disabled = !ok;
+  $("fwnote").style.display = ok ? "none" : "";
+  document.querySelectorAll("#fxs [data-pwm]").forEach((b) => (b.style.opacity = ok ? "" : ".4"));
+  if (ok && was !== v) { log(`الـ ESP32 نسخة ${fw}${ip ? " · " + ip : ""} ✓ السطوع متاح`, "hi"); sendLevel(true); }
+}
+let levelTimer = null;
+function sendLevel(now) {
+  clearTimeout(levelTimer);
+  levelTimer = setTimeout(() => { if (client && client.connected) client.publish(TOPIC, "L" + level); }, now ? 0 : 120);
+}
+$("level").oninput = () => {
+  level = Number($("level").value);
+  $("lvl").textContent = Math.round(level / 255 * 100) + "%";
+  try { localStorage.setItem("level", level); } catch {}
+  if (lastState && lastState[0] !== "P") showState(lastState);
+  sendLevel();
+};
+$("lvl").textContent = Math.round(level / 255 * 100) + "%";
+setFw(1);
+
 connectMqtt();
 $("hint").textContent = HINTS.track;
-window.__debug = { send, fingers, showState, setMode, fromFingers, get mode() { return mode; }, get last() { return lastState; }, get landmarker() { return landmarker; }, loadModel, get client() { return client; } };
+window.__debug = { send, fingers, showState, setMode, fromFingers, setFw, get level() { return level; }, get mode() { return mode; }, get last() { return lastState; }, get landmarker() { return landmarker; }, loadModel, get client() { return client; } };
 </script>
 </body>
 </html>
