@@ -37,6 +37,8 @@
   .pill.wait b { background:var(--amber); box-shadow:0 0 6px var(--amber); animation:pulse 1s infinite; }
   .pill.ok b { background:var(--g); box-shadow:0 0 6px var(--g); }
   .pill.ok { color:var(--txt); }
+  button.pill { font:inherit; font-size:11px; cursor:pointer; }
+  button.pill:not(.ok) b { background:var(--dim); box-shadow:none; }
 
   /* الكاميرا */
   #cam { flex:1; min-height:0; position:relative; border-radius:18px; overflow:hidden; background:#000; border:1px solid var(--line2);
@@ -138,6 +140,7 @@
     <div class="pill wait" id="p-link"><b></b>الخادم</div>
     <div class="pill" id="p-model"><b></b>الذكاء</div>
     <div class="pill" id="p-cam"><b></b>الكاميرا</div>
+    <button class="pill" id="p-usb" title="اتصال بالكيبل"><b></b>USB</button>
   </div>
 </header>
 
@@ -300,8 +303,10 @@ function connectMqtt() {
   client.on("error", (e) => log("خطأ في الاتصال " + (e && e.message || ""), "bad"));
 }
 function send(s, quiet) {
-  if (!client || !client.connected) return;
-  client.publish(TOPIC, s, { qos: 0 });
+  const mq = client && client.connected;
+  if (!mq && !writer) return;
+  if (mq) client.publish(TOPIC, s, { qos: 0 });
+  writeSerial(s);
   lastSent = performance.now();
   $("tx").textContent = "TX " + (++txCount);
   if (!quiet) {
@@ -517,7 +522,7 @@ document.querySelectorAll(".led").forEach((el) => (el.onclick = () => {
 setInterval(() => { if (mode === "manual" && !testing && performance.now() - lastSent > 2000) send(manual, true); }, 1000);
 
 $("test").onclick = async () => {
-  if (!client || !client.connected) return log("الخادم مو متصل للحين", "bad");
+  if (!(client && client.connected) && !writer) return log("مو متصل بالـ ESP32 للحين", "bad");
   if (testing) return;
   log("جاري اختبار اللمبات...", "hi");
   testing = true; clearTimeout(fxTimer);
@@ -531,6 +536,61 @@ $("test").onclick = async () => {
 };
 $("logbtn").onclick = () => $("term").classList.toggle("big");
 
+// ---------- اتصال USB (من Chrome على الكمبيوتر) ----------
+let port = null, writer = null;
+const enc = new TextEncoder();
+const NL = String.fromCharCode(10);
+function writeSerial(s) { if (writer) writer.write(enc.encode(s + NL)).catch(() => {}); }
+async function readLoop(p) {
+  const dec = new TextDecoderStream();
+  p.readable.pipeTo(dec.writable).catch(() => {});
+  const reader = dec.readable.getReader();
+  let buf = "";
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let i;
+      while ((i = buf.indexOf(NL)) >= 0) {
+        const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        if (line.startsWith("STATUS ")) { try { const st = JSON.parse(line.slice(7)); setFw(st.fw || 1, st.ip); } catch {} }
+      }
+    }
+  } catch {}
+}
+async function openPort(p) {
+  await p.open({ baudRate: 9600 });
+  // بدونها الـ ESP32 ممكن يعيد التشغيل لما ينفتح المنفذ
+  try { await p.setSignals({ dataTerminalReady: false, requestToSend: false }); } catch {}
+  port = p; writer = p.writable.getWriter();
+  pill("p-usb", "ok");
+  log("تم الاتصال بالـ ESP32 عبر USB ✓", "hi");
+  readLoop(p);
+  setTimeout(() => writeSerial("?"), 400);
+  if (lastState) setTimeout(() => writeSerial(lastState), 500);
+}
+async function connectUSB() {
+  if (port) return log("USB متصل أصلاً");
+  try {
+    const p = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x1a86 }, { usbVendorId: 0x10c4 }, { usbVendorId: 0x303a }] });
+    await openPort(p);
+  } catch (e) {
+    if (e.name === "NotFoundError") return;  // سكّر نافذة الاختيار
+    pill("p-usb", "bad");
+    log(e.name === "InvalidStateError" || /open/i.test(e.message) ? "المنفذ مشغول: سكّر أي برنامج ثاني يستخدم الـ ESP32" : "خطأ USB: " + e.message, "bad");
+  }
+}
+if ("serial" in navigator) {
+  $("p-usb").onclick = connectUSB;
+  navigator.serial.addEventListener("disconnect", (e) => {
+    if (e.target === port) { port = null; writer = null; pill("p-usb", ""); log("انفصل كيبل USB", "bad"); }
+  });
+  navigator.serial.getPorts().then((ps) => { if (ps[0]) openPort(ps[0]).catch(() => {}); });  // يرجع يتصل لحاله
+} else {
+  $("p-usb").style.display = "none";  // الآيفون ما يدعم USB في المتصفح
+}
+
 // ---------- السطوع ----------
 function setFw(v, ip) {
   const was = fw; fw = v;
@@ -543,7 +603,10 @@ function setFw(v, ip) {
 let levelTimer = null;
 function sendLevel(now) {
   clearTimeout(levelTimer);
-  levelTimer = setTimeout(() => { if (client && client.connected) client.publish(TOPIC, "L" + level); }, now ? 0 : 120);
+  levelTimer = setTimeout(() => {
+    if (client && client.connected) client.publish(TOPIC, "L" + level);
+    writeSerial("L" + level);
+  }, now ? 0 : 120);
 }
 $("level").oninput = () => {
   level = Number($("level").value);
@@ -557,7 +620,7 @@ setFw(1);
 
 connectMqtt();
 $("hint").textContent = HINTS.track;
-window.__debug = { send, fingers, showState, setMode, fromFingers, setFw, get level() { return level; }, get mode() { return mode; }, get last() { return lastState; }, get landmarker() { return landmarker; }, loadModel, get client() { return client; } };
+window.__debug = { get usb() { return !!writer; }, send, fingers, showState, setMode, fromFingers, setFw, get level() { return level; }, get mode() { return mode; }, get last() { return lastState; }, get landmarker() { return landmarker; }, loadModel, get client() { return client; } };
 </script>
 </body>
 </html>
